@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SSD1306 Frame Viewer</title>
+  <script src="oled_frames.js"></script>
+  <style>
+    body {
+      background-color: #1e1e1e; /* dark theme background */
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    canvas {
+      background: black;
+      border: 2px solid gray;
+      display: block;
+      margin: 0 auto;
+    }
+
+    button, input {
+      margin: 6px;
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="oled"></canvas>
+<br>
+<button onclick="prevFrame()">◀ Prev</button>
+<button onclick="nextFrame()">Next ▶</button>
+<input id="frameInput" type="number" min="0" value="0" style="width: 60px;" onchange="goToFrame(this.value)">
+<span id="frameCounter">0 / 0</span>
+
+<script>
+let currentFrame = 0;
+
+// === Configuration ===
+const scale = 10;          // pixel size in px
+const spacing = 3;        // spacing between pixels
+const pixelOnColor = "#00FF66";  // color of ON pixels
+const pixelOffColor = "#101010"; // color of OFF pixels
+// =====================
+
+const canvas = document.getElementById("oled");
+const ctx = canvas.getContext("2d");
+
+canvas.width = 128 * (scale + spacing);
+canvas.height = 64 * (scale + spacing);
+
+function drawFrame(data) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < 64; y++) {
+    for (let x = 0; x < 128; x++) {
+      const byteIndex = y * 16 + Math.floor(x / 8);
+      const bit = 7 - (x % 8);
+      const isOn = (data[byteIndex] >> bit) & 1;
+
+      ctx.fillStyle = isOn ? pixelOnColor : pixelOffColor;
+      ctx.fillRect(
+        x * (scale + spacing),
+        y * (scale + spacing),
+        scale,
+        scale
+      );
+    }
+  }
+
+  document.getElementById("frameCounter").textContent = `${currentFrame} / ${frames.length - 1}`;
+  document.getElementById("frameInput").value = currentFrame;
+}
+
+function nextFrame() {
+  if (currentFrame < frames.length - 1) {
+    currentFrame++;
+    drawFrame(frames[currentFrame]);
+  }
+}
+
+function prevFrame() {
+  if (currentFrame > 0) {
+    currentFrame--;
+    drawFrame(frames[currentFrame]);
+  }
+}
+
+function goToFrame(n) {
+  n = parseInt(n);
+  if (n >= 0 && n < frames.length) {
+    currentFrame = n;
+    drawFrame(frames[n]);
+  }
+}
+
+window.onload = () => {
+  if (frames.length > 0) {
+    drawFrame(frames[0]);
+  } else {
+    alert("No frames loaded.");
+  }
+};
+</script>
+</body>
+</html>
